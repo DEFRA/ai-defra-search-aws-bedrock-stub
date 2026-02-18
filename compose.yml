@@ -55,7 +55,7 @@ services:
   #   networks:
   #     - cdp-tenant
 
-  cdp-node-backend-template:
+  ai-defra-search-aws-bedrock-stub:
     build:
       context: .
       target: development
