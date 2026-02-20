@@ -22,4 +22,8 @@ jobs:
       - name: Test Docker Image Build
         run: |
           docker build --no-cache --tag ai-defra-search-aws-bedrock-stub .
-          docker run --rm ai-defra-search-aws-bedrock-stub --version
+          docker run -d --name test-container ai-defra-search-aws-bedrock-stub
+          sleep 5
+          docker exec test-container wget --spider http://localhost:8080/__admin/health
+          docker stop test-container
+          docker rm test-container
