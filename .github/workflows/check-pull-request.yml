@@ -23,7 +23,6 @@ jobs:
         run: |
           docker build --no-cache --tag ai-defra-search-aws-bedrock-stub .
           docker run -d --name test-container ai-defra-search-aws-bedrock-stub
-          sleep 5
-          docker exec test-container wget --spider http://localhost:8080/__admin/health
-          docker stop test-container
-          docker rm test-container
+          sleep 10
+          docker exec test-container wget --quiet --tries=1 --spider http://localhost:8080/__admin/health
+          docker rm -f test-container
