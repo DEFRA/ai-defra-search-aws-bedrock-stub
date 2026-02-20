@@ -1,103 +1,311 @@
 # ai-defra-search-aws-bedrock-stub
 
-Core delivery platform Node.js Backend Template.
+WireMock stub service to simulate AWS Bedrock API endpoints for local development and testing.
 
-- [Requirements](#requirements)
-  - [Node.js](#nodejs)
-- [Local development](#local-development)
-  - [Setup](#setup)
-  - [Development](#development)
-  - [Testing](#testing)
-  - [Production](#production)
-  - [Npm scripts](#npm-scripts)
-  - [Update dependencies](#update-dependencies)
-  - [Formatting](#formatting)
-    - [Windows prettier issue](#windows-prettier-issue)
-- [API endpoints](#api-endpoints)
-- [Development helpers](#development-helpers)
-  - [Proxy](#proxy)
-- [Docker](#docker)
-  - [Development image](#development-image)
-  - [Production image](#production-image)
-  - [Docker Compose](#docker-compose)
-  - [Dependabot](#dependabot)
-  - [SonarCloud](#sonarcloud)
-- [Licence](#licence)
-  - [About the licence](#about-the-licence)
+## Quick Start
 
-## Requirements
-
-### Node.js
-
-Please install [Node.js](http://nodejs.org/) `>= v22` and [npm](https://nodejs.org/) `>= v11`. You will find it
-easier to use the Node Version Manager [nvm](https://github.com/creationix/nvm)
-
-To use the correct version of Node.js for this application, via nvm:
+Start the WireMock service using Docker Compose:
 
 ```bash
-cd ai-defra-search-aws-bedrock-stub
-nvm use
+docker compose up -d
 ```
 
-## Local development
+The service will be available at `http://localhost:8080`.
 
-### Setup
+## Documentation
 
-Install application dependencies:
+For detailed information about using the WireMock stub service, see [WIREMOCK_GUIDE.md](./WIREMOCK_GUIDE.md).
+
+## Available Endpoints
+
+- **Stub Endpoints**: `http://localhost:8080`
+- **Admin API**: `http://localhost:8080/__admin`
+- **Health Check**: `http://localhost:8080/__admin/health`
+
+## Stub Configuration
+
+Stub mappings are defined in `./wiremock/mappings/` and response files in `./wiremock/__files/`.
+
+### Current Stubs
+
+1. **Claude Converse API** - Simulates AWS Bedrock Claude model conversations
+2. **Titan Embed Text V2 API** - Simulates AWS Bedrock text embedding
+
+## Docker
+
+### Build Image
 
 ```bash
-npm install
+docker build -t ai-defra-search-aws-bedrock-stub .
 ```
 
-### Development
-
-To run the application in `development` mode run:
+### Run Container
 
 ```bash
-npm run dev
+docker run -p 8080:8080 ai-defra-search-aws-bedrock-stub
 ```
 
-### Testing
+# WireMock Stub Service Guide
 
-To test the application run:
+This project includes a WireMock stub service to simulate AWS Bedrock API endpoints for local development and testing.
+
+## Starting the Service
+
+Start the WireMock service using Docker Compose:
 
 ```bash
-npm run test
+docker compose up -d wiremock
 ```
 
-### Production
-
-To mimic the application running in `production` mode locally run:
+Or start all services:
 
 ```bash
-npm start
+docker compose up -d
 ```
 
-### Npm scripts
+## Accessing WireMock
 
-All available Npm scripts can be seen in [package.json](./package.json).
-To view them in your command line run:
+- **Stub Endpoints**: `http://localhost:8090`
+- **Admin API**: `http://localhost:8090/__admin`
+- **From Docker Network**: `http://wiremock:8080`
+
+## Health Check
 
 ```bash
-npm run
+curl http://localhost:8090/__admin/health
 ```
 
-### Update dependencies
+## Available Stub Endpoints
 
-To update dependencies use [npm-check-updates](https://github.com/raineorshine/npm-check-updates):
+### Understanding Priority Matching
 
-> The following script is a good start. Check out all the options on
-> the [npm-check-updates](https://github.com/raineorshine/npm-check-updates)
+WireMock uses priority-based matching to select responses when multiple mappings could match a request. Lower priority numbers are matched first (priority 1 before priority 2). This allows you to create specific responses for particular scenarios while having fallback responses for general cases.
+
+All responses include a 2-second delay (`fixedDelayMilliseconds: 2000`) to simulate realistic API latency.
+
+### 1. Claude Converse API
+
+**Endpoint**: `POST /model/anthropic.claude-{model}/converse`
+
+The Claude Converse API stub supports multiple conversation scenarios using priority-based pattern matching:
+
+#### Simple Question - "What is UCD?" (Priority 2)
+
+Matches simple user questions containing "What is UCD".
+
+**Example Request**:
+```bash
+curl -X POST http://localhost:8090/model/anthropic.claude-3-5-sonnet-20241022-v2:0/converse \
+  -H "Content-Type: application/x-amz-json-1.1" \
+  -d '{
+    "messages": [
+      {
+        "role": "user",
+        "content": [{"text": "What is UCD?"}]
+      }
+    ]
+  }'
+```
+
+**Response**:
+```json
+{
+  "output": {
+    "message": {
+      "role": "assistant",
+      "content": [
+        {
+          "text": "It's this really cool thing called User Centred Design"
+        }
+      ]
+    }
+  },
+  "stopReason": "end_turn",
+  "usage": {
+    "inputTokens": 180,
+    "outputTokens": 295,
+    "totalTokens": 475
+  }
+}
+```
+
+#### Multi-turn Conversation - "Is it good practice?" (Priority 1)
+
+Matches conversations with message history containing "Is it good practice" in the third message.
+
+**Example Request**:
+```bash
+curl -X POST http://localhost:8090/model/anthropic.claude-3-5-sonnet-20241022-v2:0/converse \
+  -H "Content-Type: application/x-amz-json-1.1" \
+  -d '{
+    "messages": [
+      {
+        "role": "user",
+        "content": [{"text": "What is UCD?"}]
+      },
+      {
+        "role": "assistant",
+        "content": [{"text": "It'\''s this really cool thing called User Centred Design"}]
+      },
+      {
+        "role": "user",
+        "content": [{"text": "Is it good practice to use UCD?"}]
+      }
+    ]
+  }'
+```
+
+**Response**:
+```json
+{
+  "output": {
+    "message": {
+      "role": "assistant",
+      "content": [
+        {
+          "text": "Absolutely, you'll produce much better software geared towards users needs"
+        }
+      ]
+    }
+  },
+  "stopReason": "end_turn",
+  "usage": {
+    "inputTokens": 180,
+    "outputTokens": 295,
+    "totalTokens": 475
+  }
+}
+```
+
+### 2. Titan Embed Text V2 API
+
+**Endpoint**: `POST /model/amazon.titan-embed-text-v2:0/invoke`
+
+**Example Request**:
+```bash
+curl -X POST http://localhost:8090/model/amazon.titan-embed-text-v2:0/invoke \
+  -H "Content-Type: application/json" \
+  -d '{"inputText": "Sample text to embed"}'
+```
+
+**Response**: Returns `embed_response.json` with a 2-second delay
+
+## Customizing Stubs
+
+### Adding New Mappings
+
+1. Create a new mapping file in `./wiremock/mappings/`:
+
+```json
+{
+  "mappings": [
+    {
+      "name": "My Custom Stub",
+      "priority": 1,
+      "request": {
+        "method": "POST",
+        "urlPathPattern": "/model/.*",
+        "bodyPatterns": [
+          {
+            "matchesJsonPath": "$.messages[?(@.role == 'user')]",
+            "contains": "specific text"
+          }
+        ]
+      },
+      "response": {
+        "status": 200,
+        "bodyFileName": "my_response.json",
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "fixedDelayMilliseconds": 2000
+      }
+    }
+  ]
+}
+```
+
+**Key Fields**:
+- `priority`: Lower numbers are matched first (1 before 2). Use this to create specific responses that take precedence over general ones.
+- `bodyPatterns`: Array of patterns to match against the request body. Supports `matchesJsonPath` for JSON path queries and `contains` for text matching.
+- `matchesJsonPath`: Uses JSONPath syntax to query the request body structure.
+- `fixedDelayMilliseconds`: Adds realistic latency to responses.
+
+2. Create the response file in `./wiremock/__files/my_response.json`
+
+3. Restart WireMock:
+```bash
+docker compose restart wiremock
+```
+
+### Viewing Loaded Mappings
 
 ```bash
-ncu --interactive --format group
+curl http://localhost:8090/__admin/mappings
 ```
 
-### Formatting
+### Viewing Request History
 
-#### Windows prettier issue
+```bash
+curl http://localhost:8090/__admin/requests
+```
 
-If you are having issues with formatting of line breaks on Windows update your global git config by running:
+## Admin API
+
+WireMock provides a powerful admin API for managing stubs:
+
+- **List all mappings**: `GET /__admin/mappings`
+- **View request journal**: `GET /__admin/requests`
+- **Reset request journal**: `DELETE /__admin/requests`
+- **Add new mapping**: `POST /__admin/mappings`
+- **Health check**: `GET /__admin/health`
+
+## Troubleshooting
+
+### Check Container Status
+```bash
+docker compose ps
+```
+
+### View Logs
+```bash
+docker compose logs wiremock
+```
+
+### Follow Logs in Real-time
+```bash
+docker compose logs -f wiremock
+```
+
+### Verify Mappings are Loaded
+```bash
+curl http://localhost:8090/__admin/mappings | jq '.mappings | length'
+```
+
+## Resources
+
+- [WireMock Documentation](https://wiremock.org/docs/)
+- [WireMock Admin API](https://wiremock.org/docs/api/)
+- [Request Matching](https://wiremock.org/docs/request-matching/)
+- [Response Templating](https://wiremock.org/docs/response-templating/)
+
+## Licence
+
+THIS INFORMATION IS LICENSED UNDER THE CONDITIONS OF THE OPEN GOVERNMENT LICENCE found at:
+
+<http://www.nationalarchives.gov.uk/doc/open-government-licence/version/3>
+
+The following attribution statement MUST be cited in your products and applications when using this information.
+
+> Contains public sector information licensed under the Open Government licence v3
+
+### About the licence
+
+The Open Government Licence (OGL) was developed by the Controller of Her Majesty's Stationery Office (HMSO) to enable
+information providers in the public sector to license the use and re-use of their information under a common open
+licence.
+
+It is designed to encourage use and re-use of information freely and flexibly, with only a few conditions.
 
 ```bash
 git config --global core.autocrlf false
@@ -134,58 +342,6 @@ return await fetch(url, {
   })
 })
 ```
-
-## Docker
-
-### Development image
-
-Build:
-
-```bash
-docker build --target development --no-cache --tag ai-defra-search-aws-bedrock-stub:development .
-```
-
-Run:
-
-```bash
-docker run -e PORT=3001 -p 3001:3001 ai-defra-search-aws-bedrock-stub:development
-```
-
-### Production image
-
-Build:
-
-```bash
-docker build --no-cache --tag ai-defra-search-aws-bedrock-stub .
-```
-
-Run:
-
-```bash
-docker run -e PORT=3001 -p 3001:3001 ai-defra-search-aws-bedrock-stub
-```
-
-### Docker Compose
-
-A local environment with:
-
-- Localstack for AWS services (S3, SQS)
-- Redis
-- This service.
-- A commented out frontend example.
-
-```bash
-docker compose up --build -d
-```
-
-### Dependabot
-
-We have added an example dependabot configuration file to the repository. You can enable it by renaming
-the [.github/example.dependabot.yml](.github/example.dependabot.yml) to `.github/dependabot.yml`
-
-### SonarCloud
-
-Instructions for setting up SonarCloud can be found in [sonar-project.properties](./sonar-project.properties)
 
 ## Licence
 
