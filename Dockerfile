@@ -11,4 +11,4 @@ ENV PORT=${PORT}
 EXPOSE ${PORT}
 
 ENTRYPOINT ["/docker-entrypoint.sh"]
-CMD ["--verbose", "--global-response-templating"]
+CMD ["--global-response-templating"]
