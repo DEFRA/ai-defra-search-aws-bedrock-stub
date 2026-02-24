@@ -7,8 +7,11 @@ ARG PORT=8080
 ENV PORT=${PORT}
 EXPOSE ${PORT}
 
-USER root
-RUN apt-get update && apt-get install -y curl
+RUN apt update && \
+    apt upgrade -y && \
+    apt install curl -y && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 ENTRYPOINT ["/docker-entrypoint.sh"]
 CMD ["--global-response-templating"]
