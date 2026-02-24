@@ -8,9 +8,7 @@ ENV PORT=${PORT}
 EXPOSE ${PORT}
 
 USER root
-RUN apt update && \
-    apt install -y curl \
-USER wiremock
+RUN apt-get update && apt-get install -y curl
 
 ENTRYPOINT ["/docker-entrypoint.sh"]
 CMD ["--global-response-templating"]
