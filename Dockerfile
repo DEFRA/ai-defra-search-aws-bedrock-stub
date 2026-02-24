@@ -12,9 +12,9 @@ COPY ./wiremock/__files /home/wiremock/__files
 
 EXPOSE 443
 
-ARG PORT=8080
+ARG PORT=8085
 ENV PORT=${PORT}
 EXPOSE ${PORT}
 
 ENTRYPOINT ["/docker-entrypoint.sh"]
-CMD ["--global-response-templating"]
+CMD ["--global-response-templating", "--port", "8085"]
