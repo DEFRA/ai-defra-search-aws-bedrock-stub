@@ -7,7 +7,6 @@ ARG PORT=8080
 ENV PORT=${PORT}
 EXPOSE ${PORT}
 
-USER root
 RUN apt-get update && apt-get install -y curl
 
 ENTRYPOINT ["/docker-entrypoint.sh"]
